@@ -1,6 +1,7 @@
 /*
 *	Author: Enes Solak
 *	Web: https://enessolak.com.tr
+*	Github: https://github.com/mrfade/maze-game
 *
 */
 
@@ -74,7 +75,7 @@ void copyArray(int *, int *, int);
 void gameMenu();
 string saveSolution(); // returns file name
 void updateSolution(string);
-cell *m(int, int);
+cell *m(int, int); // returns maze cell address
 
 void main() {
 
@@ -86,7 +87,6 @@ void main() {
 	textColor(10); cout << endl << "OK! Good Bye.." << endl;
 	Sleep(1000);
 
-	// system("pause");
 }
 
 void playGame() {
@@ -183,9 +183,9 @@ void playGame() {
 			else if (m(curY, curX)->c == wallType::enemy) { // hit enemy
 				system("cls");
 				textColor(12); cout << endl << "You Lose! Restarting.." << endl; textColor(7);
-				remove(file_name.c_str());
+				remove(file_name.c_str()); // remove solution file
 				Sleep(1000);
-				playGame();
+				playGame(); // restart game
 			}
 
 			m(curY, curX)->c = wallType::cursor;
@@ -395,9 +395,6 @@ void generateMaze() {
 
 	removeEnemiesOnTheWay();
 
-	/* cout << "curx" << curX << endl;
-	cout << "cury" << curY << endl; */
-
 }
 
 void saveMove(int x, int y) {
@@ -457,10 +454,10 @@ void solveMaze() {
 
 	while (true) {
 
-		bool canMoveLeft = curX > 1 && m(curY, curX - 1)->c != wallType::wall && m(curY, curX - 1)->visited != wallType::wall ? true : false;
-		bool canMoveRight = curX < mazeSize - 2 && m(curY, curX + 1)->c != wallType::wall && m(curY, curX + 1)->visited != wallType::wall ? true : false;
-		bool canMoveUpper = curY > 1 && m(curY - 1, curX)->c != wallType::wall && m(curY - 1, curX)->visited != wallType::wall ? true : false;
-		bool canMoveLower = curY < mazeSize - 2 && m(curY + 1, curX)->c != wallType::wall && m(curY + 1, curX)->visited != wallType::wall ? true : false;
+		bool canMoveLeft = curX > 1 && m(curY, curX - 1)->c != wallType::wall && m(curY, curX - 1)->visited != 1 ? true : false;
+		bool canMoveRight = curX < mazeSize - 2 && m(curY, curX + 1)->c != wallType::wall && m(curY, curX + 1)->visited != 1 ? true : false;
+		bool canMoveUpper = curY > 1 && m(curY - 1, curX)->c != wallType::wall && m(curY - 1, curX)->visited != 1 ? true : false;
+		bool canMoveLower = curY < mazeSize - 2 && m(curY + 1, curX)->c != wallType::wall && m(curY + 1, curX)->visited != 1 ? true : false;
 
 		m(curY, curX)->visited = 1;
 
@@ -505,10 +502,10 @@ void solveMazeAnimation(int *curX, int *curY) {
 		if (firstX != 1 && firstY != 1 && *curX == 1 && *curY == 1)
 			setCellVisited(0);
 
-		canMoveLeft = *curX > 1 && m(*curY, *curX - 1)->c != wallType::wall && m(*curY, *curX - 1)->visited != wallType::wall && m(*curY, *curX - 1)->c != wallType::enemy ? true : false;
-		canMoveRight = *curX < mazeSize - 2 && m(*curY, *curX + 1)->c != wallType::wall && m(*curY, *curX + 1)->visited != wallType::wall && m(*curY, *curX + 1)->c != wallType::enemy ? true : false;
-		canMoveUpper = *curY > 1 && m(*curY - 1, *curX)->c != wallType::wall && m(*curY - 1, *curX)->visited != wallType::wall && m(*curY - 1, *curX)->c != wallType::enemy ? true : false;
-		canMoveLower = *curY < mazeSize - 2 && m(*curY + 1, *curX)->c != wallType::wall && m(*curY + 1, *curX)->visited != wallType::wall && m(*curY + 1, *curX)->c != wallType::enemy ? true : false;
+		canMoveLeft = *curX > 1 && m(*curY, *curX - 1)->c != wallType::wall && m(*curY, *curX - 1)->visited != 1 && m(*curY, *curX - 1)->c != wallType::enemy ? true : false;
+		canMoveRight = *curX < mazeSize - 2 && m(*curY, *curX + 1)->c != wallType::wall && m(*curY, *curX + 1)->visited != 1 && m(*curY, *curX + 1)->c != wallType::enemy ? true : false;
+		canMoveUpper = *curY > 1 && m(*curY - 1, *curX)->c != wallType::wall && m(*curY - 1, *curX)->visited != 1 && m(*curY - 1, *curX)->c != wallType::enemy ? true : false;
+		canMoveLower = *curY < mazeSize - 2 && m(*curY + 1, *curX)->c != wallType::wall && m(*curY + 1, *curX)->visited != 1 && m(*curY + 1, *curX)->c != wallType::enemy ? true : false;
 
 		if (m(*curY, *curX)->c == wallType::coin) totalCoins++;
 
