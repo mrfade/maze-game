@@ -276,6 +276,8 @@ void generateMaze() {
 				leftBlock = false;
 			else if (m(curY - 1, curX - 1)->c != wallType::wall || m(curY + 1, curX - 1)->c != wallType::wall)
 				leftBlock = false;
+			else if (m(curY - 1, curX - 2)->c != wallType::wall || m(curY + 1, curX - 2)->c != wallType::wall)
+				leftBlock = false;
 		}
 		else leftBlock = false;
 
@@ -284,6 +286,8 @@ void generateMaze() {
 			if (curX < mazeSize - 3 && m(curY, curX + 2)->c != wallType::wall)
 				rightBlock = false;
 			else if (m(curY - 1, curX + 1)->c != wallType::wall || m(curY + 1, curX + 1)->c != wallType::wall)
+				rightBlock = false;
+			else if (m(curY - 1, curX + 2)->c != wallType::wall || m(curY + 1, curX + 2)->c != wallType::wall)
 				rightBlock = false;
 		}
 		else rightBlock = false;
@@ -294,6 +298,8 @@ void generateMaze() {
 				upperBlock = false;
 			else if (m(curY - 1, curX + 1)->c != wallType::wall || m(curY - 1, curX - 1)->c != wallType::wall)
 				upperBlock = false;
+			else if (m(curY - 2, curX + 1)->c != wallType::wall || m(curY - 2, curX - 1)->c != wallType::wall)
+				upperBlock = false;
 		}
 		else upperBlock = false;
 
@@ -302,6 +308,8 @@ void generateMaze() {
 			if (curY < mazeSize - 3 && m(curY + 2, curX)->c != wallType::wall)
 				lowerBlock = false;
 			else if (m(curY + 1, curX + 1)->c != wallType::wall || m(curY + 1, curX - 1)->c != wallType::wall)
+				lowerBlock = false;
+			else if (m(curY + 2, curX + 1)->c != wallType::wall || m(curY + 2, curX - 1)->c != wallType::wall)
 				lowerBlock = false;
 		}
 		else lowerBlock = false;
