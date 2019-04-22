@@ -60,7 +60,7 @@ cell *m(int, int); // returns maze cell address
 
 int main() {
 
-	window.create(VideoMode(1400, 1000), "MAZE GAME by Enes Solak");
+	window.create(VideoMode(800, 600), "MAZE GAME by Enes Solak");
 
 	srand(time(NULL));
 
@@ -91,15 +91,11 @@ void playGame() {
 	int leftOffset = 350;
 
 	int curX = 0, curY = 1;
-	int lastX = 0, lastY = 0;
-	int ASfirstX = 0, ASfirstY = 0;
+	int lastX = 0, lastY = 1;
+	int ASfirstX = 0, ASfirstY = 1;
 	int holdX = 0, holdY = 1;
 	bool hitWall = false;
 	string file_name;
-
-	setCellVisited(0);
-	totalCoins = 0;
-	moveHistoryIterator = 0;
 
 	while (window.isOpen()) {
 
@@ -128,7 +124,7 @@ void playGame() {
 
 			if (event.type == Event::KeyPressed) {
 
-				if (!gameStarted && event.key.code == Keyboard::Enter) {
+				if ((!gameStarted && event.key.code == Keyboard::Enter) || (gameFinished && event.key.code == Keyboard::Space)) {
 					if (mazeInput.length() > 1) {
 
 						mazeSize = stoi(mazeInput);
@@ -136,16 +132,26 @@ void playGame() {
 						if (mazeSize < 10) mazeSize = 10;
 						if (mazeSize > 100) mazeSize = 100;
 
+						setCellVisited(0);
+						totalCoins = 0;
+						moveHistoryIterator = 0;
+
+						curX = 0, curY = 1;
+						lastX = 0, lastY = 1;
+						ASfirstX = 0, ASfirstY = 1;
+						holdX = 0, holdY = 1;
+
 						generateMaze();
 
 						file_name = saveSolution();
 
 						gameStarted = true;
+						gameFinished = false;
 					}
 				}
 
 				if (gameStarted && (event.key.code == Keyboard::Up || event.key.code == Keyboard::Down || event.key.code == Keyboard::Left || event.key.code == Keyboard::Right)) {
-
+					
 					m(curY, curX)->c = wallType::road;
 
 					if (event.key.code == Keyboard::Up) curY--;
@@ -180,10 +186,6 @@ void playGame() {
 
 				}
 
-				if (gameFinished && event.key.code == Keyboard::Space) {
-					playGame();
-				}
-
 				if (gameStarted && !autoSolverEnabled && event.key.code == Keyboard::Tab) {
 
 					moveHistoryIterator = 0;
@@ -198,6 +200,11 @@ void playGame() {
 
 				if (autoSolverEnabled && event.key.code == Keyboard::Escape) {
 					autoSolverEnabled = false;
+				}
+
+				if (gameStarted && !gameFinished && event.key.code == Keyboard::C) {
+					gameStarted = false;
+					mazeInput = "";
 				}
 
 			}
@@ -263,13 +270,18 @@ void playGame() {
 			text.setPosition(75, 120);
 			window.draw(text);
 
-			text.setString("[Tab] to Auto-Solver");
+			text.setString("[C] to change maze size");
 			text.setPosition(50, 170);
 			text.setCharacterSize(20);
 			window.draw(text);
 
-			text.setString("[Escape] to exit");
+			text.setString("[Tab] to Auto-Solver");
 			text.setPosition(50, 200);
+			text.setCharacterSize(20);
+			window.draw(text);
+
+			text.setString("[Escape] to exit");
+			text.setPosition(50, 230);
 			text.setCharacterSize(20);
 			window.draw(text);
 
@@ -282,16 +294,16 @@ void playGame() {
 			window.clear(Color(192, 57, 43));
 
 			text.setString("YOU LOST!");
-			text.setPosition(170, 50);
+			text.setPosition(150, 50);
 			text.setCharacterSize(100);
 			text.setOutlineThickness(0.5);
 			text.setStyle(Text::Bold);
 			window.draw(text);
 			text.setStyle(Text::Regular);
 
-			text.setString("Restarting");
-			text.setPosition(400, 200);
-			text.setCharacterSize(20);
+			text.setString("Restarting...");
+			text.setPosition(310, 200);
+			text.setCharacterSize(40);
 			text.setOutlineThickness(0.1);
 			window.draw(text);
 
@@ -313,12 +325,12 @@ void playGame() {
 			window.draw(text);
 			text.setStyle(Text::Regular);
 
-			coin.setPosition(180, 195);
+			coin.setPosition(110, 195);
 			window.draw(coin);
 
 			text.setString("Total coins: " + to_string(totalCoins));
 			text.setCharacterSize(20);
-			text.setPosition(200, 190);
+			text.setPosition(130, 190);
 			text.setOutlineThickness(0.1);
 			window.draw(text);
 
@@ -333,19 +345,20 @@ void playGame() {
 				text.setString("An error occurred while trying to save solution file!");
 				text.setFillColor(Color::Red);
 			}
-			text.setPosition(180, 240);
+			text.setPosition(110, 240);
 			text.setCharacterSize(20);
 			text.setStyle(Text::Underlined);
 			window.draw(text);
 			text.setStyle(Text::Regular);
+			text.setFillColor(Color::White);
 
 			text.setString("[Space] to play again");
-			text.setPosition(180, 280);
+			text.setPosition(110, 280);
 			text.setCharacterSize(20);
 			window.draw(text);
 
 			text.setString("[Escape] to exit");
-			text.setPosition(180, 310);
+			text.setPosition(110, 310);
 			text.setCharacterSize(20);
 			window.draw(text);
 
@@ -543,14 +556,6 @@ void getLastMove(int *x, int *y) {
 
 void printMaze(int leftOffset, int upperOffset) {
 
-	int cellSize = 18;
-	float scale = 1;
-
-	if (mazeSize > 50) {
-		cellSize = 9;
-		scale = 0.5f;
-	}
-
 	Texture wallTexture, coinTexture, enemyTexture, cursorTexture;
 	wallTexture.loadFromFile("resources/images/wall.png");
 	coinTexture.loadFromFile("resources/images/coin.png");
@@ -559,43 +564,79 @@ void printMaze(int leftOffset, int upperOffset) {
 
 	Sprite wall(wallTexture), coin(coinTexture), enemy(enemyTexture), cursor(cursorTexture);
 
-	RectangleShape rectangle(Vector2f(cellSize, cellSize));
+	RectangleShape rectangle(Vector2f(18, 18));
 	rectangle.setOutlineColor(Color::Black);
 	rectangle.setOutlineThickness(0.5);
 	rectangle.setFillColor(Color(236, 240, 241));
 
-	for (int i = 0; i < mazeSize; i++)
+	int curX = 0, curY = 0;
+
+	for (int y = 0; y < mazeSize; y++)
 	{
-		for (int j = 0; j < mazeSize; j++)
+		for (int x = 0; x < mazeSize; x++)
+		{
+			if (m(y, x)->c == wallType::cursor) {
+				curX = x;
+				curY = y;
+				break;
+			}
+		}
+	}
+
+	int width = 20, height = 20;
+	int startX = 0, startY = 0;
+
+	if (mazeSize > width) {
+
+		if (curX > width / 2)
+			startX = curX - width / 2;
+
+		if (curY > height / 2)
+			startY = curY - height / 2;
+
+		if (mazeSize - startX < width)
+			startX = mazeSize - width;
+
+		if (mazeSize - startY < height)
+			startY = mazeSize - height;
+	}
+
+	int lastX = startX + width, lastY = startY + height;
+	
+	if (lastX > mazeSize)
+		lastX = mazeSize;
+
+	if (lastY > mazeSize)
+		lastY = mazeSize;
+
+	for (int y = startY; y < lastY; y++)
+	{
+		for (int x = startX; x < lastX; x++)
 		{
 
-			if (m(i, j)->c != wallType::wall) {
-				rectangle.setPosition(leftOffset + j * cellSize, upperOffset + i * cellSize);
+			if (m(y, x)->c != wallType::wall) {
+				rectangle.setPosition(leftOffset + (x - startX) * 18, upperOffset + (y - startY) * 18);
 				window.draw(rectangle);
 			}
 
-			if (m(i, j)->c == wallType::wall) { // wall
-				wall.setPosition(j * cellSize, i * cellSize);
+			if (m(y, x)->c == wallType::wall) { // wall
+				wall.setPosition((x - startX) * 18, (y - startY) * 18);
 				wall.move(leftOffset, upperOffset); //offset
-				wall.setScale(Vector2f(scale, scale));
 				window.draw(wall);
 			}
-			else if (m(i, j)->c == wallType::coin) { // coin
-				coin.setPosition(j * cellSize, i * cellSize);
+			else if (m(y, x)->c == wallType::coin) { // coin
+				coin.setPosition((x - startX) * 18, (y - startY) * 18);
 				coin.move(leftOffset, upperOffset); //offset
-				coin.setScale(Vector2f(scale, scale));
 				window.draw(coin);
 			}
-			else if (m(i, j)->c == wallType::enemy) { // enemy
-				enemy.setPosition(j * cellSize, i * cellSize);
+			else if (m(y, x)->c == wallType::enemy) { // enemy
+				enemy.setPosition((x - startX) * 18, (y - startY) * 18);
 				enemy.move(leftOffset, upperOffset); //offset
-				enemy.setScale(Vector2f(scale, scale));
 				window.draw(enemy);
 			}
-			else if(m(i, j)->c == wallType::cursor) { // cursor
-				cursor.setPosition(j * cellSize, i * cellSize);
+			else if (m(y, x)->c == wallType::cursor) { // cursor
+				cursor.setPosition((x - startX) * 18, (y - startY) * 18);
 				cursor.move(leftOffset, upperOffset); //offset
-				cursor.setScale(Vector2f(scale, scale));
 				window.draw(cursor);
 			}
 
