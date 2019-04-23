@@ -9,6 +9,7 @@
 #include <iostream>
 #include <ctime>
 #include <fstream>
+#include <sstream>
 #include <conio.h>
 #include <windows.h>
 
@@ -61,6 +62,7 @@ cell *m(int, int); // returns maze cell address
 int main() {
 
 	window.create(VideoMode(800, 600), "MAZE GAME by Enes Solak");
+	window.setFramerateLimit(30); // 30 frame is enough to play
 
 	srand(time(NULL));
 
@@ -97,20 +99,14 @@ void playGame() {
 	bool hitWall = false;
 	string file_name;
 
-	while (window.isOpen()) {
+	Clock clock;
+	ostringstream osstr;
 
-		if (gameFinished) window.clear(Color(39, 174, 96));
-		else window.clear(Color(44, 62, 80));
+	while (window.isOpen()) {
 
 		Event event;
 
-		Text text;
-		text.setFillColor(Color::White);
-		text.setFont(font);
-		text.setOutlineColor(Color::Black);
-		text.setOutlineThickness(0.1);
-
-		while (window.pollEvent(event))	{
+		while (window.pollEvent(event)) {
 
 			if (event.type == Event::Closed || (event.type == Event::KeyPressed && event.key.code == Keyboard::Escape && !autoSolverEnabled))
 				window.close();
@@ -215,6 +211,28 @@ void playGame() {
 			}
 
 		}
+
+		if (gameFinished) window.clear(Color(39, 174, 96));
+		else window.clear(Color(44, 62, 80));
+
+		osstr.str("");
+		osstr << "Frame: " << clock.restart().asMilliseconds() << "ms";
+
+		Text frame;
+		frame.setFillColor(Color::White);
+		frame.setFont(font);
+		frame.setOutlineColor(Color::Black);
+		frame.setOutlineThickness(0.3);
+		frame.setString(osstr.str());
+		frame.setPosition(10, 10);
+		frame.setCharacterSize(16);
+		window.draw(frame);
+
+		Text text;
+		text.setFillColor(Color::White);
+		text.setFont(font);
+		text.setOutlineColor(Color::Black);
+		text.setOutlineThickness(0.1);
 
 		if (autoSolverEnabled) {
 
@@ -401,7 +419,7 @@ void generateMaze() {
 	int randomMovesIterator = 0;
 
 	do {
-		
+
 		/* window.clear(Color(44, 62, 80));
 		m(curY, curX)->c = wallType::cursor;
 		printMaze(50, 50);
@@ -607,7 +625,7 @@ void printMaze(int leftOffset, int upperOffset) {
 	}
 
 	int lastX = startX + width, lastY = startY + height;
-	
+
 	if (lastX > mazeSize)
 		lastX = mazeSize;
 
@@ -699,7 +717,7 @@ void solveMazeRecursive(int *curX, int *curY, int firstX, int firstY) {
 	canMoveRight = *curX < mazeSize - 2 && m(*curY, *curX + 1)->c != wallType::wall && m(*curY, *curX + 1)->visited != 1 && m(*curY, *curX + 1)->c != wallType::enemy ? true : false;
 	canMoveUpper = *curY > 1 && m(*curY - 1, *curX)->c != wallType::wall && m(*curY - 1, *curX)->visited != 1 && m(*curY - 1, *curX)->c != wallType::enemy ? true : false;
 	canMoveLower = *curY < mazeSize - 2 && m(*curY + 1, *curX)->c != wallType::wall && m(*curY + 1, *curX)->visited != 1 && m(*curY + 1, *curX)->c != wallType::enemy ? true : false;
-	
+
 	m(*curY, *curX)->c = wallType::road;
 	m(*curY, *curX)->visited = 1;
 
