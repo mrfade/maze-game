@@ -124,6 +124,11 @@ void playGame() {
 
 			if (event.type == Event::KeyPressed) {
 
+				if (!gameStarted && event.key.code == Keyboard::BackSpace) {
+					if (mazeInput.length() > 0)
+						mazeInput.pop_back();
+				}
+
 				if ((!gameStarted && event.key.code == Keyboard::Enter) || (gameFinished && event.key.code == Keyboard::Space)) {
 					if (mazeInput.length() > 1) {
 
@@ -151,7 +156,7 @@ void playGame() {
 				}
 
 				if (gameStarted && (event.key.code == Keyboard::Up || event.key.code == Keyboard::Down || event.key.code == Keyboard::Left || event.key.code == Keyboard::Right)) {
-					
+
 					m(curY, curX)->c = wallType::road;
 
 					if (event.key.code == Keyboard::Up) curY--;
