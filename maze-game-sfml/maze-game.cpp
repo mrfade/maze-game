@@ -588,7 +588,7 @@ void printMaze(int leftOffset, int upperOffset) {
 	Sprite wall(wallTexture), coin(coinTexture), enemy(enemyTexture), cursor(cursorTexture);
 
 	RectangleShape rectangle(Vector2f(18, 18));
-	rectangle.setFillColor(Color(236, 240, 241));
+	rectangle.setFillColor(Color(148, 237, 255));
 
 	int curX = 0, curY = 0;
 
