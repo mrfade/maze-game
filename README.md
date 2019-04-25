@@ -1,8 +1,11 @@
 # maze-game
 
-### maze-game-sfml
-![](maze-game-sfml/screen.gif)<br/>
+## maze-game-sfml
+![](maze-game-sfml/screen.gif)<br/><br/>
 Uses [SFML](https://github.com/SFML/SFML) Library to render window
 
-### maze-game-console
+**Sounds from:** [https://themushroomkingdom.net/media/smb/wav](https://themushroomkingdom.net/media/smb/wav)<br/>
+**Background music:** [https://www.youtube.com/watch?v=NTa6Xbzfq1U](https://www.youtube.com/watch?v=NTa6Xbzfq1U)
+
+## maze-game-console
 ![](maze-game-console/screen.gif)
