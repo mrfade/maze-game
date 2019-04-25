@@ -6,11 +6,11 @@
 */
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <iostream>
 #include <ctime>
 #include <fstream>
 #include <sstream>
-#include <conio.h>
 #include <windows.h>
 
 using namespace std;
@@ -31,8 +31,60 @@ public:
 	static const int cursor = 9;
 };
 
+class Animation
+{
+public:
+	float Frame, speed;
+	Sprite sprite;
+	std::vector<IntRect> frames;
+
+	Animation() {}
+
+	Animation(Texture &t, int x, int y, int w, int h, int count, float Speed)
+	{
+		Frame = 0;
+		speed = Speed;
+
+		for (int i = 0; i < count; i++)
+			frames.push_back(IntRect(x + i * w, y, w, h));
+
+		sprite.setTexture(t);
+		sprite.setOrigin(w / 2, h / 2);
+		sprite.setTextureRect(frames[0]);
+	}
+	
+	void create(Texture &t, int x, int y, int w, int h, int count, float Speed)
+	{
+		Frame = 0;
+		speed = Speed;
+
+		for (int i = 0; i < count; i++)
+			frames.push_back(IntRect(x + i * w, y, w, h));
+
+		sprite.setTexture(t);
+		sprite.setOrigin(w / 2, h / 2);
+		sprite.setTextureRect(frames[0]);
+	}
+
+
+	void update()
+	{
+		Frame += speed;
+		int n = frames.size();
+		if (Frame >= n) Frame -= n;
+		if (n > 0) sprite.setTextureRect(frames[int(Frame)]);
+	}
+
+	bool isEnd()
+	{
+		return Frame + speed >= frames.size();
+	}
+
+};
+
 
 RenderWindow window;
+Animation coinAnim;
 
 cell maze[100][100];
 int mazeSize = 20; // maze size
@@ -77,10 +129,19 @@ void playGame() {
 	Font font;
 	font.loadFromFile("resources/sansation.ttf");
 
-	Texture coinTexture;
-	coinTexture.loadFromFile("resources/images/coin.png");
+	SoundBuffer backgroundBuffer, coinBuffer, pipeBuffer, winBuffer, dieBuffer;
+	backgroundBuffer.loadFromFile("resources/sounds/background.ogg");
+	coinBuffer.loadFromFile("resources/sounds/coin.wav");
+	pipeBuffer.loadFromFile("resources/sounds/pipe.wav");
+	winBuffer.loadFromFile("resources/sounds/win.wav");
+	dieBuffer.loadFromFile("resources/sounds/die.wav");
 
-	Sprite coin(coinTexture);
+	Sound backgroundSound, coinSound, pipeSound, winSound, dieSound;
+	backgroundSound.setBuffer(backgroundBuffer);
+	coinSound.setBuffer(coinBuffer);
+	pipeSound.setBuffer(pipeBuffer);
+	winSound.setBuffer(winBuffer);
+	dieSound.setBuffer(dieBuffer);
 
 	string mazeInput;
 	bool gameStarted = false;
@@ -92,15 +153,23 @@ void playGame() {
 	int upperOffset = 50;
 	int leftOffset = 350;
 
-	int curX = 0, curY = 1;
-	int lastX = 0, lastY = 1;
-	int ASfirstX = 0, ASfirstY = 1;
-	int holdX = 0, holdY = 1;
+	int curX = 1, curY = 1;
+	int lastX = 1, lastY = 1;
+	int ASfirstX = 1, ASfirstY = 1;
+	int holdX = 1, holdY = 1;
 	bool hitWall = false;
 	string file_name;
 
 	Clock clock;
 	ostringstream osstr;
+	
+	backgroundSound.setBuffer(backgroundBuffer);
+	backgroundSound.setLoop(true);
+	backgroundSound.play();
+
+	Texture coinAnimationTexture;
+	coinAnimationTexture.loadFromFile("resources/images/coin-anim.png");
+	coinAnim.create(coinAnimationTexture, 0, 0, 18, 18, 6, 0.2);
 
 	while (window.isOpen()) {
 
@@ -118,37 +187,43 @@ void playGame() {
 				}
 			}
 
+			if (event.type == Event::KeyPressed && ((!gameStarted && event.key.code == Keyboard::Enter) || (gameFinished && event.key.code == Keyboard::Space)) || loseGame) {
+				if (mazeInput.length() > 1) {
+
+					mazeSize = stoi(mazeInput);
+
+					if (mazeSize < 10) mazeSize = 10;
+					if (mazeSize > 100) mazeSize = 100;
+
+					setCellVisited(0);
+					totalCoins = 0;
+					moveHistoryIterator = 0;
+
+					curX = 1, curY = 1;
+					lastX = 1, lastY = 1;
+					ASfirstX = 1, ASfirstY = 1;
+					holdX = 1, holdY = 1;
+
+					generateMaze();
+
+					file_name = saveSolution();
+
+					gameStarted = true;
+					gameFinished = false;
+					loseGame = false;
+
+					pipeSound.play();
+					backgroundSound.pause();
+					backgroundSound.play();
+					winSound.stop();
+				}
+			}
+
 			if (event.type == Event::KeyPressed) {
 
 				if (!gameStarted && event.key.code == Keyboard::BackSpace) {
 					if (mazeInput.length() > 0)
 						mazeInput.pop_back();
-				}
-
-				if ((!gameStarted && event.key.code == Keyboard::Enter) || (gameFinished && event.key.code == Keyboard::Space)) {
-					if (mazeInput.length() > 1) {
-
-						mazeSize = stoi(mazeInput);
-
-						if (mazeSize < 10) mazeSize = 10;
-						if (mazeSize > 100) mazeSize = 100;
-
-						setCellVisited(0);
-						totalCoins = 0;
-						moveHistoryIterator = 0;
-
-						curX = 0, curY = 1;
-						lastX = 0, lastY = 1;
-						ASfirstX = 0, ASfirstY = 1;
-						holdX = 0, holdY = 1;
-
-						generateMaze();
-
-						file_name = saveSolution();
-
-						gameStarted = true;
-						gameFinished = false;
-					}
 				}
 
 				if (gameStarted && (event.key.code == Keyboard::Up || event.key.code == Keyboard::Down || event.key.code == Keyboard::Left || event.key.code == Keyboard::Right)) {
@@ -160,17 +235,34 @@ void playGame() {
 					if (event.key.code == Keyboard::Left) curX--;
 					if (event.key.code == Keyboard::Right) curX++;
 
-					if (curX == mazeSize - 1 && curY == mazeSize - 2) gameFinished = true;
+					if (curX == mazeSize - 1 && curY == mazeSize - 2) {
+						gameFinished = true;
+
+						pipeSound.play();
+						backgroundSound.stop();
+						Sleep(600);
+						winSound.play();
+					}
 
 					if (m(curY, curX)->c == wallType::wall || curX < 0) { // hit wall
 						curX = lastX;
 						curY = lastY;
 						hitWall = true;
 					}
-					else if (m(curY, curX)->c == wallType::coin) // hit coin
+					else if (m(curY, curX)->c == wallType::coin) { // hit coin
 						totalCoins++;
-					else if (m(curY, curX)->c == wallType::enemy) // hit enemy
+						coinSound.play();
+					}
+					else if (m(curY, curX)->c == wallType::enemy) { // hit enemy
 						loseGame = true; // restart game
+
+						backgroundSound.stop();
+
+						dieSound.play();
+
+						remove(file_name.c_str()); // remove solution file
+						Sleep(3000);
+					}
 
 					m(curY, curX)->c = wallType::cursor;
 
@@ -208,6 +300,18 @@ void playGame() {
 					mazeInput = "";
 				}
 
+				if (gameFinished && file_name != "" && event.key.code == Keyboard::O) {
+					HMODULE hModule = GetModuleHandleW(NULL);
+					WCHAR path[MAX_PATH];
+					GetModuleFileNameW(hModule, path, MAX_PATH);
+					wstring ws(path);
+					string real_path(ws.begin(), ws.end());
+					const size_t last_slash_idx = ws.rfind('\\');
+					if (string::npos != last_slash_idx)
+						real_path = real_path.substr(0, last_slash_idx);
+					real_path = "notepad.exe " + real_path + "\\" + file_name;
+					system(real_path.c_str());
+				}
 			}
 
 		}
@@ -285,8 +389,9 @@ void playGame() {
 			text.setPosition(50, 50);
 			window.draw(text);
 
-			coin.setPosition(50, 125);
-			window.draw(coin);
+			coinAnim.sprite.setPosition(50, 125);
+			coinAnim.sprite.move(9, 9);
+			window.draw(coinAnim.sprite);
 
 			text.setString("Total coins: " + to_string(totalCoins));
 			text.setCharacterSize(20);
@@ -312,32 +417,6 @@ void playGame() {
 
 		}
 
-		if (loseGame) {
-
-			window.clear(Color(192, 57, 43));
-
-			text.setString("YOU LOST!");
-			text.setPosition(150, 50);
-			text.setCharacterSize(100);
-			text.setOutlineThickness(0.5);
-			text.setStyle(Text::Bold);
-			window.draw(text);
-			text.setStyle(Text::Regular);
-
-			text.setString("Restarting...");
-			text.setPosition(310, 200);
-			text.setCharacterSize(40);
-			text.setOutlineThickness(0.1);
-			window.draw(text);
-
-			window.display();
-
-			remove(file_name.c_str()); // remove solution file
-			Sleep(1000);
-			playGame();
-
-		}
-
 		if (gameFinished) {
 
 			text.setString("YOU WIN!");
@@ -348,8 +427,10 @@ void playGame() {
 			window.draw(text);
 			text.setStyle(Text::Regular);
 
-			coin.setPosition(110, 195);
-			window.draw(coin);
+			coinAnim.sprite.setPosition(110, 195);
+			coinAnim.sprite.move(9, 9);
+			window.draw(coinAnim.sprite);
+			coinAnim.update();
 
 			text.setString("Total coins: " + to_string(totalCoins));
 			text.setCharacterSize(20);
@@ -375,19 +456,23 @@ void playGame() {
 			text.setStyle(Text::Regular);
 			text.setFillColor(Color::White);
 
-			text.setString("[Space] to play again");
+			text.setString("[O] to open solution file");
 			text.setPosition(110, 280);
 			text.setCharacterSize(20);
 			window.draw(text);
 
-			text.setString("[Escape] to exit");
+			text.setString("[Space] to play again");
 			text.setPosition(110, 310);
 			text.setCharacterSize(20);
 			window.draw(text);
 
+			text.setString("[Escape] to exit");
+			text.setPosition(110, 340);
+			text.setCharacterSize(20);
+			window.draw(text);
+
 		}
-
-
+		
 		window.display();
 
 	}
@@ -540,7 +625,8 @@ void generateMaze() {
 
 	} while (true);
 
-	(*maze + 1)->c = wallType::cursor;
+	(*maze + 1)->c = wallType::road;
+	(*maze + 1 + mazeSize)->c = wallType::cursor;
 
 	(*maze + mazeSize - 2 + (mazeSize - 1) * mazeSize)->c = wallType::road;
 	(*maze + mazeSize - 2 + (mazeSize - 2) * mazeSize)->c = wallType::road;
@@ -579,13 +665,13 @@ void getLastMove(int *x, int *y) {
 
 void printMaze(int leftOffset, int upperOffset) {
 
-	Texture wallTexture, coinTexture, enemyTexture, cursorTexture;
+	Texture wallTexture, coinTexture, enemyTexture, cursorTexture, pipeTexture;
 	wallTexture.loadFromFile("resources/images/wall.png");
-	coinTexture.loadFromFile("resources/images/coin.png");
 	enemyTexture.loadFromFile("resources/images/enemy.png");
 	cursorTexture.loadFromFile("resources/images/cursor.png");
+	pipeTexture.loadFromFile("resources/images/pipe.png");
 
-	Sprite wall(wallTexture), coin(coinTexture), enemy(enemyTexture), cursor(cursorTexture);
+	Sprite wall(wallTexture), coin(coinTexture), enemy(enemyTexture), cursor(cursorTexture), pipe(pipeTexture);
 
 	RectangleShape rectangle(Vector2f(18, 18));
 	rectangle.setFillColor(Color(148, 237, 255));
@@ -640,15 +726,28 @@ void printMaze(int leftOffset, int upperOffset) {
 				window.draw(rectangle);
 			}
 
+			if (x == 0 && y == 1) {
+				pipe.setPosition((x - startX) * 18, (y - startY) * 18);
+				pipe.move(leftOffset, upperOffset); //offset
+				window.draw(pipe);
+			}
+
+			if (x == mazeSize - 1 && y == mazeSize - 2) {
+				pipe.setPosition((x - startX) * 18, (y - startY) * 18);
+				pipe.move(leftOffset + 18, upperOffset + 18); //offset
+				pipe.rotate(180);
+				window.draw(pipe);
+			}
+
 			if (m(y, x)->c == wallType::wall) { // wall
 				wall.setPosition((x - startX) * 18, (y - startY) * 18);
 				wall.move(leftOffset, upperOffset); //offset
 				window.draw(wall);
 			}
 			else if (m(y, x)->c == wallType::coin) { // coin
-				coin.setPosition((x - startX) * 18, (y - startY) * 18);
-				coin.move(leftOffset, upperOffset); //offset
-				window.draw(coin);
+				coinAnim.sprite.setPosition((x - startX) * 18, (y - startY) * 18);
+				coinAnim.sprite.move(leftOffset + 9, upperOffset + 9);
+				window.draw(coinAnim.sprite);
 			}
 			else if (m(y, x)->c == wallType::enemy) { // enemy
 				enemy.setPosition((x - startX) * 18, (y - startY) * 18);
@@ -663,6 +762,8 @@ void printMaze(int leftOffset, int upperOffset) {
 
 		}
 	}
+
+	coinAnim.update();
 }
 
 void solveMaze() {
