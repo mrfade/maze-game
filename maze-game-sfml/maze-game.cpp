@@ -211,6 +211,7 @@ void playGame() {
 					gameStarted = true;
 					gameFinished = false;
 					loseGame = false;
+					solutionUpdated = false;
 
 					pipeSound.play();
 					backgroundSound.pause();
@@ -348,6 +349,9 @@ void playGame() {
 			solveMazeRecursive(&curX, &curY, ASfirstX, ASfirstY);
 
 			m(curY, curX)->c = wallType::cursor;
+
+			lastX = curX;
+			lastY = curY;
 
 			Sleep(20 / mazeSize * mazeSize);
 
